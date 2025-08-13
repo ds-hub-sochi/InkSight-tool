@@ -61,7 +61,7 @@ async def search_knowledge_base(request: SearchRequest):
 
     try:
         results = chatbot.search_knowledge_base(
-            query=request.query, k=request.k, include_scores=request.include_scores
+            query=request.query, k=request.k
         )
 
         if "error" in results:

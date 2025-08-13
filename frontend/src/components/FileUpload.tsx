@@ -24,11 +24,23 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete }) => {
       
       setUploadResult(response);
       onUploadComplete?.(response);
+      
+      // Clear the input value to allow re-uploading same filename
+      const fileInput = document.getElementById('file-input') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
     } catch (err: any) {
       console.error('Upload error:', err);
       setError(err.message || 'Upload failed');
     } finally {
       setUploading(false);
+      
+      // Always clear the input value after upload attempt
+      const fileInput = document.getElementById('file-input') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
     }
   };
 
