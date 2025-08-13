@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Upload, MessageSquare, BookOpen, Bot, Settings } from 'lucide-react';
 import { ChatInterface } from './components/ChatInterface';

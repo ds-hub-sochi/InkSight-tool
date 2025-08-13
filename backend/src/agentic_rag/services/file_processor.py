@@ -2,8 +2,8 @@ import io
 import tempfile
 from pathlib import Path
 from typing import List, Optional, Tuple
-from langchain.document_loaders import TextLoader
-from langchain.document_loaders.pdf import PyPDF2Loader
+from langchain_community.document_loaders import TextLoader
+from langchain_community.document_loaders import PyPDFLoader
 from langchain.schema import Document
 
 
@@ -108,8 +108,8 @@ class FileProcessor:
             temp_file_path = temp_file.name
 
         try:
-            # Use PyPDF2Loader with temporary file
-            loader = PyPDF2Loader(temp_file_path)
+            # Use PyPDFLoader with temporary file
+            loader = PyPDFLoader(temp_file_path)
             documents = loader.load()
 
             # Update metadata for all pages

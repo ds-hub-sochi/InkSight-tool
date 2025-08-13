@@ -57,7 +57,6 @@ def initialize_services():
         enable_reranker=settings.enable_reranker,
         temperature=settings.temperature,
         max_tokens=settings.max_tokens,
-        memory_window=settings.memory_window,
         langsmith_project=settings.langsmith_project,
     )
 

@@ -77,6 +77,11 @@ def main():
         help="Clear existing vector store before processing",
     )
 
+    # Info command
+    info_parser = subparsers.add_parser(
+        "info", help="Show vector store information"
+    )
+
     args = parser.parse_args()
 
     if args.command == "process":

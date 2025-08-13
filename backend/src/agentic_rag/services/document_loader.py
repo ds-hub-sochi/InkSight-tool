@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List, Union
-from langchain.document_loaders import TextLoader
-from langchain.document_loaders.pdf import PyPDF2Loader
+from langchain_community.document_loaders import TextLoader
+from langchain_community.document_loaders import PyPDFLoader
 from langchain.schema import Document
 
 
@@ -43,11 +43,25 @@ class DocumentLoader:
         return documents
 
     def _load_txt(self, file_path: Path) -> List[Document]:
-        """Load a TXT file."""
-        loader = TextLoader(str(file_path))
-        return loader.load()
+        """Load a TXT file with proper encoding handling."""
+        try:
+            # Try UTF-8 first
+            loader = TextLoader(str(file_path), encoding='utf-8')
+            return loader.load()
+        except UnicodeDecodeError:
+            # Fallback to other encodings
+            encodings = ['cp1251', 'windows-1252', 'iso-8859-1']
+            for encoding in encodings:
+                try:
+                    loader = TextLoader(str(file_path), encoding=encoding)
+                    return loader.load()
+                except UnicodeDecodeError:
+                    continue
+            # If all fail, try with error handling
+            loader = TextLoader(str(file_path), encoding='utf-8', errors='replace')
+            return loader.load()
 
     def _load_pdf(self, file_path: Path) -> List[Document]:
         """Load a PDF file."""
-        loader = PyPDF2Loader(str(file_path))
+        loader = PyPDFLoader(str(file_path))
         return loader.load()

@@ -1,10 +1,9 @@
 import os
-from typing import List, Optional, Dict, Any
+from typing import Optional, Dict, Any
+from langchain import hub
 from langchain.agents import AgentExecutor, create_react_agent
 from langchain.tools import Tool
-from langchain.prompts import PromptTemplate
 from langchain.memory import ConversationBufferWindowMemory
-from langchain.schema import BaseMessage
 
 from ..models.llm import ChatOpenRouter
 from ..core.tracing import setup_tracing
@@ -16,195 +15,155 @@ class AgenticChatBot:
 
     def __init__(
         self,
-        model_name: str = "anthropic/claude-3.5-sonnet",
+        model_name: str = "openai/gpt-4o-mini",
         vector_store_path: str = "./vector_store",
         enable_reranker: bool = False,
         temperature: float = 0.1,
-        max_tokens: int = 2000,
-        memory_window: int = 10,
+        max_tokens: int = 1500,
         langsmith_project: Optional[str] = None,
     ):
-        """Initialize the agentic chatbot.
-
-        Args:
-            model_name: OpenRouter model to use
-            vector_store_path: Path to vector store
-            enable_reranker: Enable semantic reranking
-            temperature: LLM temperature
-            max_tokens: Maximum tokens for responses
-            memory_window: Conversation memory window size
-            langsmith_project: LangSmith project name for tracing
-        """
-        # Set up tracing
-        self.callbacks = setup_tracing(
-            langsmith_api_key=os.getenv("LANGCHAIN_API_KEY"),
-            langsmith_project=langsmith_project or os.getenv("LANGCHAIN_PROJECT"),
-        )
-
-        # Initialize LLM
+        """Initialize the agentic chatbot."""
+        # Setup components
         self.llm = ChatOpenRouter(
-            model_name=model_name, temperature=temperature, max_tokens=max_tokens
+            model_name=model_name, 
+            temperature=temperature, 
+            max_tokens=max_tokens
         )
-
-        # Initialize retrieval service
+        
         self.retrieval_service = RetrievalService(
-            vector_store_path=vector_store_path, enable_reranker=enable_reranker
+            vector_store_path=vector_store_path, 
+            enable_reranker=enable_reranker
         )
+        
+        # Setup tracing
+        self.callbacks = []
+        if os.getenv("LANGCHAIN_API_KEY"):
+            self.callbacks = setup_tracing(
+                langsmith_api_key=os.getenv("LANGCHAIN_API_KEY"),
+                langsmith_project=langsmith_project or os.getenv("LANGCHAIN_PROJECT"),
+            )
 
-        # Initialize memory
+        # Add memory for conversation history
         self.memory = ConversationBufferWindowMemory(
-            k=memory_window, return_messages=True, memory_key="chat_history"
+            k=5,  # Keep last 5 exchanges
+            memory_key="chat_history",
+            return_messages=True
         )
 
-        # Create tools and agent
-        self._create_tools()
+        # Create agent
         self._create_agent()
 
-    def _create_tools(self) -> None:
-        """Create tools for the agent."""
-
-        def vector_search_tool(query: str) -> str:
-            """Search the knowledge base for relevant information."""
-            if not self.retrieval_service.is_store_ready():
-                return "Knowledge base is not available. Please ensure documents have been processed."
-
-            context = self.retrieval_service.get_context_string(
-                query=query, k=4, include_metadata=True
-            )
-
-            if not context.strip():
-                return "No relevant information found in the knowledge base."
-
-            return f"Retrieved context:\n{context}"
-
-        self.tools = [
-            Tool(
-                name="knowledge_search",
-                description="Search the knowledge base for relevant information. Use this when the user asks questions that might be answered by the stored documents.",
-                func=vector_search_tool,
-            )
-        ]
-
     def _create_agent(self) -> None:
-        """Create the ReAct agent."""
+        """Create the ReAct agent using standard pattern."""
+        # Create tools
+        def search_knowledge(query: str) -> str:
+            """Поиск в базе знаний русской литературы и истории. Ищет информацию о произведениях, персонажах, сюжетах, исторических событиях и культурном контексте."""
+            if not self.retrieval_service.is_store_ready():
+                return "База знаний русской литературы недоступна."
+            
+            try:
+                context = self.retrieval_service.get_context_string(
+                    query=query, k=4, include_metadata=False
+                )
+                return context.strip() if context.strip() else "Не найдено релевантной информации о русской литературе или истории."
+            except Exception as e:
+                return f"Ошибка поиска в литературной базе: {str(e)}"
 
-        # Create the prompt template
-        template = """You are a helpful AI assistant with access to a knowledge base. 
-You can search the knowledge base to find relevant information to answer user questions.
-
-TOOLS:
-------
-You have access to the following tools:
-{tools}
-
-To use a tool, please use the following format:
-```
-Thought: Do I need to use a tool? Yes
-Action: the action to take, should be one of [{tool_names}]
-Action Input: the input to the action
-Observation: the result of the action
-```
-
-When you have a response to say to the Human, or if you do not need to use a tool, you MUST use the format:
-```
-Thought: Do I need to use a tool? No
-Final Answer: [your response here]
-```
-
-Previous conversation:
-{chat_history}
-
-Question: {input}
-{agent_scratchpad}"""
-
-        prompt = PromptTemplate.from_template(template)
-
-        # Create the agent
-        agent = create_react_agent(llm=self.llm, tools=self.tools, prompt=prompt)
-
-        # Create agent executor
+        tools = [Tool(
+            name="search_knowledge",
+            description="Поиск в базе знаний русской литературы и истории. Используй этот инструмент для поиска информации о произведениях русских писателей, персонажах, сюжетах, исторических событиях, культурном контексте эпохи. Особенно эффективен для вопросов о Пушкине, Толстом, Достоевском и других классиках.",
+            func=search_knowledge,
+        )]
+        
+        # Use standard ReAct prompt from hub with Russian context
+        prompt = hub.pull("hwchase17/react")
+        # Add Russian instruction to the prompt
+        prompt.template = prompt.template + "\n\nОтвечайте на русском языке, особенно при анализе русской литературы и истории. Provide detailed analysis focusing on literary techniques, historical context, and cultural significance."
+        
+        # Create agent
+        agent = create_react_agent(self.llm, tools, prompt)
+        
+        # Create agent executor with memory
         self.agent_executor = AgentExecutor(
             agent=agent,
-            tools=self.tools,
+            tools=tools,
             memory=self.memory,
             verbose=True,
             handle_parsing_errors=True,
-            max_iterations=3,
-            callbacks=self.callbacks,
+            max_iterations=5,
+            max_execution_time=30,  # 30 second timeout
+            callbacks=self.callbacks
         )
 
-    def chat(self, message: str) -> str:
-        """Send a message to the chatbot and get a response.
-
-        Args:
-            message: User message
-
-        Returns:
-            Chatbot response
-        """
+    def chat(self, message: str, chat_history: str = "") -> str:
+        """Process chat message and return response."""
         try:
-            response = self.agent_executor.invoke({"input": message})
-            return response.get("output", "I'm sorry, I couldn't generate a response.")
+            # Use the ReAct agent with automatic memory management
+            result = self.agent_executor.invoke({"input": message})
+            return result.get("output", "I couldn't generate a response.")
         except Exception as e:
-            return f"Error: {str(e)}"
+            # Only fallback on actual errors, not timeouts
+            return f"Agent error: {str(e)}"
 
     def clear_memory(self) -> None:
-        """Clear the conversation memory."""
+        """Clear conversation memory."""
         self.memory.clear()
+    
+    def _fallback_response(self, message: str) -> str:
+        """Fallback method using direct search + LLM."""
+        try:
+            # Check if we should search
+            search_keywords = ["what", "who", "when", "where", "how", "why", "story", "stories", "document", "book", "text", "tell", "about"]
+            should_search = any(keyword in message.lower() for keyword in search_keywords)
+            
+            if should_search and self.retrieval_service.is_store_ready():
+                # Get context from knowledge base
+                context = self.retrieval_service.get_context_string(message, k=3, include_metadata=False)
+                
+                if context.strip():
+                    prompt = f"""На основе следующей информации из документов русской литературы и истории, ответь на вопрос пользователя ясно и подробно. Сосредоточься на литературном анализе, историческом контексте и культурном значении.
 
-    def get_memory_messages(self) -> List[BaseMessage]:
-        """Get the current conversation memory."""
-        return self.memory.chat_memory.messages
+Контекст из русской литературы:
+{context}
 
-    def add_user_message(self, message: str) -> None:
-        """Add a user message to memory without generating response."""
-        self.memory.chat_memory.add_user_message(message)
+Вопрос: {message}
 
-    def add_context_to_memory(self, context: str, source: str = "system") -> None:
-        """Add context information to memory."""
-        self.memory.chat_memory.add_message(
-            {"role": "system", "content": f"Context from {source}: {context}"}
-        )
+Ответ на русском языке:"""
+                    # Use callbacks for tracing
+                    config = {"callbacks": self.callbacks} if self.callbacks else {}
+                    response = self.llm.invoke(prompt, config=config)
+                    return response.content
+                else:
+                    return "Не удалось найти релевантную информацию в базе знаний русской литературы для вашего вопроса. Попробуйте переформулировать запрос или задать вопрос о конкретном произведении или авторе."
+            else:
+                # Direct LLM response with tracing
+                config = {"callbacks": self.callbacks} if self.callbacks else {}
+                response = self.llm.invoke(message, config=config)
+                return response.content
+                
+        except Exception as e:
+            return f"I encountered an error: {str(e)}"
 
     def get_knowledge_base_info(self) -> Dict[str, Any]:
-        """Get information about the knowledge base."""
+        """Get knowledge base information."""
         return self.retrieval_service.get_store_info()
 
-    def search_knowledge_base(
-        self, query: str, k: int = 4, include_scores: bool = False
-    ) -> Dict[str, Any]:
-        """Search the knowledge base directly.
-
-        Args:
-            query: Search query
-            k: Number of results
-            include_scores: Whether to include similarity scores
-
-        Returns:
-            Search results
-        """
+    def search_knowledge_base(self, query: str, k: int = 4) -> Dict[str, Any]:
+        """Direct knowledge base search without agent."""
         if not self.retrieval_service.is_store_ready():
-            return {"error": "Knowledge base not ready"}
+            return {"error": "Knowledge base not ready", "results": []}
 
-        if include_scores:
-            results = self.retrieval_service.retrieve_with_scores(query, k=k)
-            return {
-                "query": query,
-                "results": [
-                    {
-                        "content": doc.page_content,
-                        "metadata": doc.metadata,
-                        "score": score,
-                    }
-                    for doc, score in results
-                ],
-            }
-        else:
+        try:
             results = self.retrieval_service.retrieve_documents(query, k=k)
             return {
                 "query": query,
                 "results": [
-                    {"content": doc.page_content, "metadata": doc.metadata}
+                    {
+                        "content": doc.page_content[:300] + "..." if len(doc.page_content) > 300 else doc.page_content,
+                        "metadata": doc.metadata
+                    }
                     for doc in results
-                ],
+                ]
             }
+        except Exception as e:
+            return {"error": str(e), "results": []}

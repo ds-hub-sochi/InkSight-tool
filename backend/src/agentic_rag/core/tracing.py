@@ -7,7 +7,7 @@ from langchain.callbacks.manager import CallbackManager
 def setup_tracing(
     langsmith_api_key: Optional[str] = None,
     langsmith_project: Optional[str] = None,
-) -> Optional[CallbackManager]:
+) -> list:
     """
     Set up tracing for LangChain calls using LangSmith.
 
@@ -16,15 +16,21 @@ def setup_tracing(
         langsmith_project: Optional LangSmith project name
 
     Returns:
-        A CallbackManager instance configured with tracers or None
+        A list of callback handlers
     """
     callbacks = []
 
     if langsmith_api_key:
+        # Set environment variables for LangSmith
         os.environ["LANGCHAIN_API_KEY"] = langsmith_api_key
+        os.environ["LANGCHAIN_TRACING_V2"] = "true"
+        os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
+        
         if langsmith_project:
             os.environ["LANGCHAIN_PROJECT"] = langsmith_project
-        callbacks.append(LangChainTracer())
-        return CallbackManager(callbacks)
+            
+        # Add LangSmith tracer
+        callbacks.append(LangChainTracer(project_name=langsmith_project))
+        print(f"✅ LangSmith tracing enabled for project: {langsmith_project}")
 
-    return None
+    return callbacks

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2, BookOpen, Search } from 'lucide-react';
 import { chatAPI } from '../lib/api';
-import type { ChatResponse, SearchResponse } from '../lib/api';
+import type { ChatResponse } from '../lib/api';
 
 interface Message {
   id: string;
@@ -19,11 +19,11 @@ interface ChatInterfaceProps {
   onSearch?: (query: string) => void;
 }
 
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onSearch }) => {
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onSearch: _onSearch }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [includeSources, setIncludeSources] = useState(false);
+  const [includeSources] = useState(false);
   const [includeDocuments, setIncludeDocuments] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -84,19 +84,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onSearch }) => {
     }
   };
 
-  const handleSearch = async (query: string) => {
-    try {
-      const response: SearchResponse = await chatAPI.search({
-        query,
-        k: 4,
-        include_scores: true,
-      });
-      onSearch?.(query);
-      // You could display search results here or handle them differently
-    } catch (error) {
-      console.error('Search error:', error);
-    }
-  };
 
   return (
     <div className="flex flex-col h-full bg-white border-0 overflow-visible">
@@ -115,14 +102,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onSearch }) => {
             
             {/* Example Questions */}
             <div className="max-w-4xl mx-auto">
-              <p className="text-sm font-semibold text-gray-500 mb-4 uppercase tracking-wide">Try asking:</p>
+              <p className="text-sm font-semibold text-gray-500 mb-4 uppercase tracking-wide">Попробуйте спросить:</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {[
-                  "What are the main topics covered in my documents?",
-                  "Can you summarize the key findings?", 
-                  "What are the most important recommendations?",
-                  "Find information about specific requirements",
-                  "Compare different approaches mentioned"
+                  "Какие главные темы раскрывает Пушкин в 'Руслане и Людмиле'?",
+                  "Расскажите о персонажах 'Сказки о царе Салтане'", 
+                  "Каков исторический контекст написания этих произведений?",
+                  "Найдите информацию о литературных приёмах автора",
+                  "Сравните стилистику разных произведений Пушкина"
                 ].map((question, index) => (
                   <button
                     key={index}

@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List, Optional
-from langchain.vectorstores import Chroma
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_chroma import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.schema import Document
 
 
@@ -52,8 +52,8 @@ class VectorStoreManager:
 
     def persist(self) -> None:
         """Persist the vector store to disk."""
-        if self.vector_store:
-            self.vector_store.persist()
+        # Note: Chroma 0.4.x+ automatically persists documents
+        pass
 
     def similarity_search(
         self, query: str, k: int = 4, filter_dict: Optional[dict] = None

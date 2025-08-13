@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import { chatAPI } from '../lib/api';
 import type { UploadDocumentResponse } from '../lib/api';
@@ -19,21 +19,14 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete }) => {
     setUploadResult(null);
 
     try {
-      // Mock upload for demo (replace with real API call when backend is available)
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate upload delay
+      // Call real backend API
+      const response = await chatAPI.uploadDocument(file);
       
-      const mockResponse: UploadDocumentResponse = {
-        success: true,
-        message: "Document uploaded successfully",
-        filename: file.name,
-        chunks_processed: Math.floor(file.size / 1000), // Mock chunk count
-        file_size_bytes: file.size
-      };
-      
-      setUploadResult(mockResponse);
-      onUploadComplete?.(mockResponse);
+      setUploadResult(response);
+      onUploadComplete?.(response);
     } catch (err: any) {
-      setError('Upload failed - demo mode');
+      console.error('Upload error:', err);
+      setError(err.message || 'Upload failed');
     } finally {
       setUploading(false);
     }
@@ -80,8 +73,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete }) => {
                 <Upload className="h-6 w-6 text-blue-600" />
               </div>
             </div>
-            <p className="text-blue-600 font-semibold text-lg">Uploading your document...</p>
-            <p className="text-gray-500 text-sm">This may take a few moments</p>
+            <p className="text-blue-600 font-semibold text-lg">Загрузка вашего документа...</p>
+            <p className="text-gray-500 text-sm">Это может занять несколько минут</p>
           </div>
         ) : (
           <>
@@ -89,10 +82,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete }) => {
               <Upload className="h-12 w-12 text-white" />
             </div>
             <p className="text-gray-800 mb-3 text-xl font-semibold">
-              Drop a document here or click to browse
+              Перетащите файл сюда или нажмите для выбора
             </p>
             <p className="text-gray-500 text-lg">
-              Supports TXT and PDF files (max 50MB)
+              Поддерживает TXT и PDF файлы (макс. 50МБ)
             </p>
           </>
         )}
@@ -118,12 +111,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete }) => {
         <div className="mt-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl shadow-lg">
           <div className="flex items-center space-x-3 mb-4">
             <CheckCircle className="h-8 w-8 text-green-500" />
-            <p className="text-lg font-bold text-green-800">Upload Successful!</p>
+            <p className="text-lg font-bold text-green-800">Успешная загрузка!</p>
           </div>
           <div className="text-green-700 space-y-2">
             <p className="flex items-center text-base"><FileText className="inline h-5 w-5 mr-2" /><span className="font-semibold">{uploadResult.filename}</span></p>
-            <p className="text-sm">📄 Processed: <span className="font-semibold">{uploadResult.chunks_processed}</span> chunks</p>
-            <p className="text-sm">📊 Size: <span className="font-semibold">{Math.round(uploadResult.file_size_bytes / 1024)} KB</span></p>
+            <p className="text-sm">📄 Обработано: <span className="font-semibold">{uploadResult.chunks_processed}</span> частей</p>
+            <p className="text-sm">📊 Размер: <span className="font-semibold">{Math.round(uploadResult.file_size_bytes / 1024)} КБ</span></p>
           </div>
         </div>
       )}
