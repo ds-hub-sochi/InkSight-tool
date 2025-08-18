@@ -8,6 +8,7 @@ from src.agentic_rag.services.agent import AgenticChatBot
 from src.agentic_rag.services.data_pipeline import DataPreparationPipeline
 from src.agentic_rag.services.file_processor import FileProcessor
 from src.agentic_rag.api import routes
+from src.agentic_rag.api import auth_routes
 
 
 def create_app() -> FastAPI:
@@ -17,7 +18,7 @@ def create_app() -> FastAPI:
         title=settings.app_name,
         version=settings.app_version,
         debug=settings.debug,
-        description="Agentic RAG System with Vector Search and LLM Chat",
+        description="INKSight - AI-powered document assistant with Vector Search and LLM Chat",
     )
 
     # Add CORS middleware
@@ -31,6 +32,7 @@ def create_app() -> FastAPI:
 
     # Include API routes
     app.include_router(routes.router, prefix="/api/v1")
+    app.include_router(auth_routes.router, prefix="/api/v1/auth", tags=["auth"])
 
     return app
 
@@ -102,7 +104,7 @@ app = create_app()
 @app.on_event("startup")
 async def startup_event():
     """Initialize services when the app starts."""
-    print("🚀 Starting Agentic RAG System...")
+    print("🚀 Starting INKSight...")
 
     # Initialize services
     initialize_services()
@@ -119,9 +121,11 @@ async def root():
     store_info = routes.chatbot.get_knowledge_base_info() if routes.chatbot else {}
 
     return {
-        "message": "Agentic RAG System API",
+        "message": "INKSight API",
         "version": settings.app_version,
         "endpoints": {
+            "login": "/api/v1/auth/login",
+            "user_info": "/api/v1/auth/me",
             "chat": "/api/v1/chat",
             "search": "/api/v1/search",
             "upload": "/api/v1/upload",

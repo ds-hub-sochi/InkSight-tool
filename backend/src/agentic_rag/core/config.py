@@ -7,13 +7,14 @@ class Settings(BaseSettings):
     """Application settings."""
 
     # API Settings
-    app_name: str = Field(default="Agentic RAG System")
+    app_name: str = Field(default="INKSight")
     app_version: str = Field(default="1.0.0")
     debug: bool = Field(default=False)
 
     # OpenRouter Settings
     openrouter_api_key: str = Field(..., env="OPENROUTER_API_KEY")
-    model_name: str = Field(default="anthropic/claude-3-5-sonnet")
+    # model_name: str = Field(default="anthropic/claude-3-5-sonnet")
+    model_name: str = Field(default="openai/gpt-5-chat")
     temperature: float = Field(default=0.1, ge=0.0, le=2.0)
     max_tokens: int = Field(default=2000, gt=0)
 
@@ -42,6 +43,11 @@ class Settings(BaseSettings):
     # Server Settings
     host: str = Field(default="0.0.0.0")
     port: int = Field(default=8000, gt=0, lt=65536)
+
+    # Authentication Settings
+    secret_key: str = Field(default="your-secret-key-change-this-in-production", env="SECRET_KEY")
+    algorithm: str = Field(default="HS256")
+    access_token_expire_minutes: int = Field(default=30)
 
     class Config:
         env_file = ".env"

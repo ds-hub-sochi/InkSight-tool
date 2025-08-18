@@ -85,6 +85,11 @@ npm run build
 npm run dev
 ```
 
+###
+test user credentials:
+testuser
+secret
+
 ## License
 
 MIT License

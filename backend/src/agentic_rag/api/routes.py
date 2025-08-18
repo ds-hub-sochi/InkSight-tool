@@ -1,5 +1,5 @@
 import os
-from fastapi import APIRouter, HTTPException, BackgroundTasks, UploadFile, File
+from fastapi import APIRouter, HTTPException, BackgroundTasks, UploadFile, File, Depends
 from fastapi.responses import JSONResponse
 
 from .models import (
@@ -16,6 +16,7 @@ from ..services.agent import AgenticChatBot
 from ..services.data_pipeline import DataPreparationPipeline
 from ..services.file_processor import FileProcessor
 from ..services.text_splitter import TextChunker
+from ..core.auth import get_current_active_user
 
 router = APIRouter()
 
@@ -26,7 +27,7 @@ file_processor: FileProcessor = None
 
 
 @router.post("/chat", response_model=ChatResponse)
-async def chat_endpoint(request: ChatMessage):
+async def chat_endpoint(request: ChatMessage, current_user: dict = Depends(get_current_active_user)):
     """Chat with the agentic RAG bot."""
     if not chatbot:
         raise HTTPException(status_code=500, detail="Chatbot not initialized")
@@ -54,7 +55,7 @@ async def chat_endpoint(request: ChatMessage):
 
 
 @router.post("/search", response_model=SearchResponse)
-async def search_knowledge_base(request: SearchRequest):
+async def search_knowledge_base(request: SearchRequest, current_user: dict = Depends(get_current_active_user)):
     """Search the knowledge base directly."""
     if not chatbot:
         raise HTTPException(status_code=500, detail="Chatbot not initialized")
@@ -77,7 +78,7 @@ async def search_knowledge_base(request: SearchRequest):
 
 @router.post("/process-documents", response_model=ProcessDocumentsResponse)
 async def process_documents(
-    request: ProcessDocumentsRequest, background_tasks: BackgroundTasks
+    request: ProcessDocumentsRequest, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_active_user)
 ):
     """Process documents and add them to the vector store."""
     if not data_pipeline:
@@ -137,7 +138,7 @@ async def get_store_info():
 
 
 @router.delete("/clear-memory")
-async def clear_memory():
+async def clear_memory(current_user: dict = Depends(get_current_active_user)):
     """Clear the chatbot's conversation memory."""
     if not chatbot:
         raise HTTPException(status_code=500, detail="Chatbot not initialized")
@@ -151,7 +152,7 @@ async def clear_memory():
 
 
 @router.post("/upload", response_model=UploadDocumentResponse)
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(file: UploadFile = File(...), current_user: dict = Depends(get_current_active_user)):
     """Upload and process a document file."""
     if not data_pipeline or not file_processor:
         raise HTTPException(status_code=500, detail="Services not initialized")

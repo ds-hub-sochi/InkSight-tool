@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { tokenStorage } from '../components/AuthProvider';
 
 type AxiosResponse<T = any> = {
   data: T;
@@ -15,6 +16,34 @@ const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000, // 30 seconds for file uploads
 });
+
+// Add request interceptor to include auth token
+api.interceptors.request.use(
+  (config) => {
+    const token = tokenStorage.get();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor to handle auth errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expired or invalid, remove it
+      tokenStorage.remove();
+      // Redirect to login or refresh the page to trigger auth flow
+      window.location.reload();
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Types
 export interface ChatMessage {

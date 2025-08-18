@@ -1,9 +1,12 @@
 import os
-from typing import Optional, Dict, Any
+import uuid
+from typing import Optional, Dict, Any, List
 from langchain import hub
 from langchain.agents import AgentExecutor, create_react_agent
 from langchain.tools import Tool
-from langchain.memory import ConversationBufferWindowMemory
+from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph import START, MessagesState, StateGraph
 
 from ..models.llm import ChatOpenRouter
 from ..core.tracing import setup_tracing
@@ -43,13 +46,11 @@ class AgenticChatBot:
                 langsmith_project=langsmith_project or os.getenv("LANGCHAIN_PROJECT"),
             )
 
-        # Add memory for conversation history
-        self.memory = ConversationBufferWindowMemory(
-            k=5,  # Keep last 5 exchanges
-            memory_key="chat_history",
-            return_messages=True
-        )
-
+        # Initialize LangGraph memory system
+        self.memory = MemorySaver()
+        self.thread_id = uuid.uuid4()
+        self.config = {"configurable": {"thread_id": self.thread_id}}
+        
         # Create agent
         self._create_agent()
 
@@ -83,31 +84,64 @@ class AgenticChatBot:
         # Create agent
         agent = create_react_agent(self.llm, tools, prompt)
         
-        # Create agent executor with memory
+        # Create agent executor without deprecated memory parameter
         self.agent_executor = AgentExecutor(
             agent=agent,
             tools=tools,
-            memory=self.memory,
             verbose=True,
             handle_parsing_errors=True,
             max_iterations=5,
             max_execution_time=30,  # 30 second timeout
             callbacks=self.callbacks
         )
+        
+        # Create LangGraph workflow for memory management
+        def call_agent(state: MessagesState):
+            # Convert messages to input format
+            if state["messages"]:
+                input_text = state["messages"][-1].content
+                try:
+                    result = self.agent_executor.invoke({"input": input_text})
+                    response = AIMessage(content=result.get("output", "I couldn't generate a response."))
+                except Exception as e:
+                    response = AIMessage(content=f"Agent error: {str(e)}")
+            else:
+                response = AIMessage(content="No input provided.")
+            
+            return {"messages": [response]}
+        
+        # Define the workflow
+        self.workflow = StateGraph(state_schema=MessagesState)
+        self.workflow.add_edge(START, "agent")
+        self.workflow.add_node("agent", call_agent)
+        
+        # Compile with memory
+        self.app = self.workflow.compile(checkpointer=self.memory)
 
     def chat(self, message: str, chat_history: str = "") -> str:
-        """Process chat message and return response."""
+        """Process chat message and return response using LangGraph with memory."""
         try:
-            # Use the ReAct agent with automatic memory management
-            result = self.agent_executor.invoke({"input": message})
-            return result.get("output", "I couldn't generate a response.")
+            input_message = HumanMessage(content=message)
+            # Use the LangGraph app with memory management
+            for event in self.app.stream({"messages": [input_message]}, self.config, stream_mode="values"):
+                if event["messages"]:
+                    last_message = event["messages"][-1]
+                    if isinstance(last_message, AIMessage):
+                        return last_message.content
+            return "I couldn't generate a response."
         except Exception as e:
-            # Only fallback on actual errors, not timeouts
-            return f"Agent error: {str(e)}"
+            # Fallback to direct agent executor
+            try:
+                result = self.agent_executor.invoke({"input": message})
+                return result.get("output", "I couldn't generate a response.")
+            except Exception as fallback_e:
+                return f"Agent error: {str(fallback_e)}"
 
     def clear_memory(self) -> None:
-        """Clear conversation memory."""
-        self.memory.clear()
+        """Clear conversation memory by creating new thread."""
+        # Create a new thread ID to effectively clear memory
+        self.thread_id = uuid.uuid4()
+        self.config = {"configurable": {"thread_id": self.thread_id}}
     
     def _fallback_response(self, message: str) -> str:
         """Fallback method using direct search + LLM."""
