@@ -32,13 +32,15 @@ interface ChatInterfaceProps {
     color: string;
   }>;
   onRemoveFromContext?: (type: 'library' | 'uploaded', identifier: number | string) => void;
+  ocrData?: any;
 }
 
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSearch: _onSearch,
   appliedDocs,
   libraryDocs,
-  onRemoveFromContext
+  onRemoveFromContext,
+  ocrData
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -55,13 +57,46 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     scrollToBottom();
   }, [messages]);
 
+  const extractContextFromSelectedImages = () => {
+    if (!appliedDocs || !ocrData || appliedDocs.library.length === 0) {
+      return '';
+    }
+
+    const extractedTexts: string[] = [];
+
+    appliedDocs.library.forEach((docIndex) => {
+      const doc = libraryDocs?.[docIndex];
+      if (doc) {
+        const imageFile = ocrData.files.find((file: any) =>
+          file.image_path === doc.imagePath.replace('/ocr_data/', '')
+        );
+        if (imageFile) {
+          const allText = imageFile.lines.map((line: any) => line.text).join(' ');
+          if (allText.trim()) {
+            extractedTexts.push(`${doc.title}: ${allText.trim()}`);
+          }
+        }
+      }
+    });
+
+    if (extractedTexts.length > 0) {
+      return `\n\nAdditional context from selected documents:\n${extractedTexts.join('\n\n')}`;
+    }
+
+    return '';
+  };
+
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
+
+    const originalInput = input.trim();
+    const contextFromImages = extractContextFromSelectedImages();
+    const messageWithContext = originalInput + contextFromImages;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
-      content: input.trim(),
+      content: originalInput, // Show only original message to user
       timestamp: new Date(),
     };
 
@@ -71,7 +106,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
     try {
       const response: ChatResponse = await chatAPI.sendMessage({
-        message: userMessage.content,
+        message: messageWithContext, // Send message with context to backend
         include_sources: includeSources,
       });
 
@@ -105,10 +140,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   const suggestedQuestions = [
-    "Какие главные темы раскрывает Пушкин в 'Руслане и Людмиле'?",
-    "Расскажите о персонажах 'Сказки о царе Салтане'",
-    "Каков исторический контекст написания этих произведений?",
-    "Найдите информацию о литературных приёмах автора"
+    "Can you identify any historical events or figures mentioned in these manuscripts?",
+    "What literary or poetic elements can be found in these ancient writings?",
+    "Can you identify any references to trade routes, cities, or geographical locations?"
   ];
 
   return (
@@ -128,9 +162,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     <h3 className="text-sm font-medium text-blue-800">
                       Context Documents ({appliedDocs.library.length + appliedDocs.uploaded.length})
                     </h3>
-                    <span className="text-xs text-blue-600">Available for this conversation</span>
+                    <span className="text-xs text-blue-600">OCR text will be included with questions</span>
                   </div>
-                  
+
                   <div className="space-y-2">
                     {/* Library Documents */}
                     {appliedDocs.library.map((docIndex) => {
@@ -164,7 +198,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         </div>
                       );
                     })}
-                    
+
                     {/* Uploaded Documents */}
                     {appliedDocs.uploaded.map((filename) => (
                       <div
@@ -231,8 +265,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   <div className={`flex items-start space-x-3 max-w-[80%] ${message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
                     {/* Avatar */}
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      message.type === 'user' 
-                        ? 'bg-gradient-to-r from-blue-600 to-green-600' 
+                      message.type === 'user'
+                        ? 'bg-gradient-to-r from-blue-600 to-green-600'
                         : 'bg-gray-100'
                     }`}>
                       {message.type === 'user' ? (

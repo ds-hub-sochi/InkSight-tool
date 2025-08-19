@@ -58,28 +58,28 @@ class AgenticChatBot:
         """Create the ReAct agent using standard pattern."""
         # Create tools
         def search_knowledge(query: str) -> str:
-            """Поиск в базе знаний русской литературы и истории. Ищет информацию о произведениях, персонажах, сюжетах, исторических событиях и культурном контексте."""
+            """Search ancient Arabic manuscripts from Uzbekistan. Finds information about historical texts, religious content, scientific knowledge, cultural insights, and historical context from medieval Central Asian manuscripts."""
             if not self.retrieval_service.is_store_ready():
-                return "База знаний русской литературы недоступна."
+                return "Ancient manuscripts knowledge base is not available."
             
             try:
                 context = self.retrieval_service.get_context_string(
                     query=query, k=4, include_metadata=False
                 )
-                return context.strip() if context.strip() else "Не найдено релевантной информации о русской литературе или истории."
+                return context.strip() if context.strip() else "No relevant information found in the ancient Arabic manuscripts from Uzbekistan."
             except Exception as e:
-                return f"Ошибка поиска в литературной базе: {str(e)}"
+                return f"Error searching ancient manuscripts database: {str(e)}"
 
         tools = [Tool(
             name="search_knowledge",
-            description="Поиск в базе знаний русской литературы и истории. Используй этот инструмент для поиска информации о произведениях русских писателей, персонажах, сюжетах, исторических событиях, культурном контексте эпохи. Особенно эффективен для вопросов о Пушкине, Толстом, Достоевском и других классиках.",
+            description="Search ancient Arabic manuscripts from medieval Uzbekistan. Use this tool to find information about historical texts, religious and philosophical content, scientific knowledge, cultural practices, historical events, trade routes, daily life, and scholarly insights from Central Asian manuscripts. Particularly effective for questions about Islamic scholarship, Sufi texts, historical chronicles, scientific treatises, and cultural documents from medieval Uzbekistan.",
             func=search_knowledge,
         )]
         
-        # Use standard ReAct prompt from hub with Russian context
+        # Use standard ReAct prompt from hub with specialized context
         prompt = hub.pull("hwchase17/react")
-        # Add Russian instruction to the prompt
-        prompt.template = prompt.template + "\n\nОтвечайте на русском языке, особенно при анализе русской литературы и истории. Provide detailed analysis focusing on literary techniques, historical context, and cultural significance."
+        # Add specialized instruction for ancient manuscript analysis
+        prompt.template = prompt.template + "\n\nYou are an expert in analyzing ancient Arabic manuscripts from medieval Uzbekistan and Central Asia. Provide detailed analysis focusing on:\n- Historical and cultural context of medieval Uzbekistan\n- Religious and philosophical content (Islamic scholarship, Sufism)\n- Scientific and mathematical knowledge preservation\n- Trade routes and economic insights\n- Daily life and social customs\n- Literary and poetic elements\n- Paleographic and codicological observations when relevant\n\nAlways contextualize findings within the broader framework of Islamic civilization and Central Asian history. Be scholarly but accessible in your explanations."
         
         # Create agent
         agent = create_react_agent(self.llm, tools, prompt)
@@ -147,7 +147,7 @@ class AgenticChatBot:
         """Fallback method using direct search + LLM."""
         try:
             # Check if we should search
-            search_keywords = ["what", "who", "when", "where", "how", "why", "story", "stories", "document", "book", "text", "tell", "about"]
+            search_keywords = ["what", "who", "when", "where", "how", "why", "manuscript", "text", "document", "religious", "historical", "cultural", "scientific", "arabic", "islamic", "uzbekistan", "central asia", "medieval"]
             should_search = any(keyword in message.lower() for keyword in search_keywords)
             
             if should_search and self.retrieval_service.is_store_ready():
@@ -155,20 +155,20 @@ class AgenticChatBot:
                 context = self.retrieval_service.get_context_string(message, k=3, include_metadata=False)
                 
                 if context.strip():
-                    prompt = f"""На основе следующей информации из документов русской литературы и истории, ответь на вопрос пользователя ясно и подробно. Сосредоточься на литературном анализе, историческом контексте и культурном значении.
+                    prompt = f"""Based on the following information from ancient Arabic manuscripts from medieval Uzbekistan and Central Asia, provide a detailed and scholarly analysis of the user's question. Focus on historical context, cultural significance, religious and philosophical content, and any scientific or literary insights.
 
-Контекст из русской литературы:
+Context from ancient manuscripts:
 {context}
 
-Вопрос: {message}
+Question: {message}
 
-Ответ на русском языке:"""
+Provide a comprehensive analysis that contextualizes the findings within the broader framework of Islamic civilization and Central Asian history:"""
                     # Use callbacks for tracing
                     config = {"callbacks": self.callbacks} if self.callbacks else {}
                     response = self.llm.invoke(prompt, config=config)
                     return response.content
                 else:
-                    return "Не удалось найти релевантную информацию в базе знаний русской литературы для вашего вопроса. Попробуйте переформулировать запрос или задать вопрос о конкретном произведении или авторе."
+                    return "I couldn't find relevant information in the ancient Arabic manuscripts database for your question. Please try rephrasing your question or asking about specific aspects of medieval Uzbekistan manuscripts, Islamic scholarship, or Central Asian history."
             else:
                 # Direct LLM response with tracing
                 config = {"callbacks": self.callbacks} if self.callbacks else {}

@@ -378,6 +378,7 @@ export const ProtectedApp = () => {
               appliedDocs={appliedDocs}
               libraryDocs={libraryDocs}
               onRemoveFromContext={removeFromContext}
+              ocrData={ocrData}
             />
           </div>
 
@@ -565,7 +566,10 @@ export const ProtectedApp = () => {
             onClick={closeImageModal}
           >
             <div
-              className="relative max-w-4xl max-h-full bg-white rounded-2xl overflow-hidden shadow-2xl"
+              className={`relative bg-white rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 flex flex-col ${
+                extractedText ? 'max-w-7xl' : 'max-w-4xl'
+              }`}
+              style={{ maxHeight: '90vh' }}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
@@ -574,94 +578,105 @@ export const ProtectedApp = () => {
                   <h3 className="text-lg font-semibold text-gray-900">{modalImage.doc.title}</h3>
                   <p className="text-sm text-gray-600">{modalImage.doc.description}</p>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={toggleTextBoxes}
-                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      showTextBoxes
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {showTextBoxes ? 'Hide Text Boxes' : 'Show Text Boxes'}
-                  </button>
-                  <button
-                    onClick={retrieveText}
-                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      extractedText
-                        ? 'bg-green-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {extractedText ? 'Hide Text' : 'Show Text'}
-                  </button>
-                  <button
-                    onClick={closeImageModal}
-                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
+                <button
+                  onClick={closeImageModal}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
               </div>
 
-              {/* Modal Image */}
-              <div className="p-6 bg-gray-50">
-                <div className="relative inline-block">
-                  <img
-                    ref={imageRef}
-                    src={modalImage.doc.imagePath}
-                    alt={modalImage.doc.title}
-                    className="w-full max-w-full h-auto rounded-lg shadow-sm"
-                    style={{ maxHeight: '70vh', objectFit: 'contain' }}
-                    onLoad={calculateTextBoxes}
-                  />
-
-                  {/* Text Box Overlays */}
-                  {showTextBoxes && textBoxes.map((box, index) => (
-                    <div
-                      key={index}
-                      className="absolute border-2 border-red-500 bg-red-500 bg-opacity-20 hover:bg-opacity-30 transition-all duration-200 cursor-pointer"
-                      style={{
-                        left: `${box.x}px`,
-                        top: `${box.y}px`,
-                        width: `${box.width}px`,
-                        height: `${box.height}px`,
-                      }}
-                      title={box.text}
+              {/* Modal Content */}
+              <div className={`flex flex-1 overflow-hidden ${extractedText ? 'divide-x divide-gray-200' : ''}`}>
+                {/* Image Panel */}
+                <div className={`p-6 bg-gray-50 overflow-y-auto ${extractedText ? 'flex-1' : 'w-full'}`}>
+                  <div className="relative inline-block">
+                    <img
+                      ref={imageRef}
+                      src={modalImage.doc.imagePath}
+                      alt={modalImage.doc.title}
+                      className="w-full max-w-full h-auto rounded-lg shadow-sm"
+                      style={{ maxHeight: '70vh', objectFit: 'contain' }}
+                      onLoad={calculateTextBoxes}
                     />
-                  ))}
-                </div>
 
-                <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
-                  <div className="flex items-center space-x-4">
-                    <span>{modalImage.doc.lines} text lines</span>
-                    <span>{modalImage.doc.characters} characters</span>
-                    <span>{modalImage.doc.size[0]} × {modalImage.doc.size[1]}px</span>
+                    {/* Text Box Overlays */}
+                    {showTextBoxes && textBoxes.map((box, index) => (
+                      <div
+                        key={index}
+                        className="absolute border-2 border-red-500 bg-red-500 bg-opacity-20 hover:bg-opacity-30 transition-all duration-200 cursor-pointer"
+                        style={{
+                          left: `${box.x}px`,
+                          top: `${box.y}px`,
+                          width: `${box.width}px`,
+                          height: `${box.height}px`,
+                        }}
+                        title={box.text}
+                      />
+                    ))}
                   </div>
-                  <span className="px-3 py-1 bg-gray-200 text-gray-700 rounded-full font-medium">
-                    {modalImage.doc.type}
-                  </span>
+
+                  <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+                    <div className="flex items-center space-x-4">
+                      <span>{modalImage.doc.lines} text lines</span>
+                      <span>{modalImage.doc.characters} characters</span>
+                      <span>{modalImage.doc.size[0]} × {modalImage.doc.size[1]}px</span>
+                    </div>
+                    <span className="px-3 py-1 bg-gray-200 text-gray-700 rounded-full font-medium">
+                      {modalImage.doc.type}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Extracted Text Display */}
+                {/* Text Panel - Right Side */}
                 {extractedText && (
-                  <div className="mt-6 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                    <div className="flex items-center justify-between mb-3">
+                  <div className="w-96 bg-white p-6 flex flex-col overflow-hidden">
+                    <div className="flex items-center justify-between mb-4">
                       <h4 className="text-lg font-semibold text-gray-900">Extracted Text</h4>
                       <button
                         onClick={() => setExtractedText(null)}
-                        className="text-gray-400 hover:text-gray-600"
+                        className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded"
                       >
                         <X className="w-5 h-5" />
                       </button>
                     </div>
-                    <div className="max-h-40 overflow-y-auto">
-                      <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono leading-relaxed">
-                        {extractedText}
-                      </pre>
+                    <div className="flex-1 overflow-hidden">
+                      <div className="h-full overflow-y-auto">
+                        <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono leading-relaxed">
+                          {extractedText}
+                        </pre>
+                      </div>
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="border-t border-gray-200 px-6 py-4 bg-white flex-shrink-0">
+                <div className="flex items-center justify-center">
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={toggleTextBoxes}
+                      className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        showTextBoxes
+                          ? 'bg-blue-600 text-white hover:bg-blue-700'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {showTextBoxes ? 'Hide Boxes' : 'Show Boxes'}
+                    </button>
+                    <button
+                      onClick={retrieveText}
+                      className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        extractedText
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {extractedText ? 'Hide Text' : 'Show Text'}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
