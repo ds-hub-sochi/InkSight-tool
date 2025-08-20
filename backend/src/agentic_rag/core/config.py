@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     # OpenRouter Settings
     openrouter_api_key: str = Field(..., env="OPENROUTER_API_KEY")
     # model_name: str = Field(default="anthropic/claude-3-5-sonnet")
-    model_name: str = Field(default="openai/gpt-5-chat")
+    model_name: str = Field(default="anthropic/claude-3-5-sonnet")
     temperature: float = Field(default=0.1, ge=0.0, le=2.0)
     max_tokens: int = Field(default=2000, gt=0)
 
