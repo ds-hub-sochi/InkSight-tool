@@ -36,10 +36,6 @@ class Settings(BaseSettings):
     reranker_model: str = Field(default="cross-encoder/ms-marco-MiniLM-L-6-v2")
     default_k: int = Field(default=4, gt=0)
 
-    # Agent Settings
-    memory_window: int = Field(default=10, gt=0)
-    max_iterations: int = Field(default=3, gt=0)
-
     # Server Settings
     host: str = Field(default="0.0.0.0")
     port: int = Field(default=8000, gt=0, lt=65536)
