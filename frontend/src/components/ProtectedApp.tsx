@@ -35,114 +35,54 @@ export const ProtectedApp = () => {
 
   const libraryDocs = [
     {
-      title: "Page 017",
+      title: "Page 7",
       description: "Ancient manuscript page from historical document",
-      imagePath: "/ocr_data/page_017.jpg",
-      size: [1780, 2592],
-      lines: 15,
-      characters: 395,
+      imagePath: "/ocr_data/page_7.jpeg",
+      size: [907, 1383], // Обновлено из JSON
+      lines: 11, // Обновлено из JSON
+      characters: 361, // Обновлено из JSON
       type: "Image",
       color: "blue"
     },
     {
-      title: "Page 018",
+      title: "Page 11",
       description: "Historical document page with ancient text",
-      imagePath: "/ocr_data/page_018.jpg",
-      size: [1780, 2592],
-      lines: 18,
-      characters: 452,
+      imagePath: "/ocr_data/page_11.jpeg",
+      size: [947, 1383], // Обновлено из JSON
+      lines: 11, // Обновлено из JSON
+      characters: 457, // Обновлено из JSON
       type: "Image",
       color: "purple"
     },
     {
-      title: "Page 019",
+      title: "Page 19",
       description: "Manuscript page with traditional script",
-      imagePath: "/ocr_data/page_019.jpg",
-      size: [1780, 2592],
-      lines: 16,
-      characters: 380,
+      imagePath: "/ocr_data/page_19.jpeg",
+      size: [947, 1383], // Обновлено из JSON
+      lines: 11, // Обновлено из JSON
+      characters: 473, // Обновлено из JSON
       type: "Image",
       color: "green"
     },
     {
-      title: "Page 020",
+      title: "Page 23",
       description: "Ancient text document page",
-      imagePath: "/ocr_data/page_020.jpg",
-      size: [1780, 2592],
-      lines: 14,
-      characters: 325,
+      imagePath: "/ocr_data/page_23.jpeg",
+      size: [947, 1383], // Обновлено из JSON
+      lines: 11, // Обновлено из JSON
+      characters: 448, // Обновлено из JSON
       type: "Image",
       color: "orange"
     },
     {
-      title: "Page 021",
+      title: "Page 25",
       description: "Historical manuscript with traditional writing",
-      imagePath: "/ocr_data/page_021.jpg",
-      size: [1780, 2592],
-      lines: 17,
-      characters: 410,
+      imagePath: "/ocr_data/page_25.jpeg",
+      size: [947, 1383], // Обновлено из JSON
+      lines: 11, // Обновлено из JSON
+      characters: 444, // Обновлено из JSON
       type: "Image",
       color: "blue"
-    },
-    {
-      title: "Page 022",
-      description: "Ancient document page from collection",
-      imagePath: "/ocr_data/page_022.jpg",
-      size: [1780, 2592],
-      lines: 15,
-      characters: 365,
-      type: "Image",
-      color: "purple"
-    },
-    {
-      title: "Page 023",
-      description: "Manuscript page with historical content",
-      imagePath: "/ocr_data/page_023.jpg",
-      size: [1780, 2592],
-      lines: 19,
-      characters: 475,
-      type: "Image",
-      color: "green"
-    },
-    {
-      title: "Page 024",
-      description: "Traditional text document page",
-      imagePath: "/ocr_data/page_024.jpg",
-      size: [1780, 2592],
-      lines: 13,
-      characters: 290,
-      type: "Image",
-      color: "orange"
-    },
-    {
-      title: "Page 025",
-      description: "Ancient manuscript page with script",
-      imagePath: "/ocr_data/page_025.jpg",
-      size: [1780, 2592],
-      lines: 16,
-      characters: 390,
-      type: "Image",
-      color: "blue"
-    },
-    {
-      title: "Page 026",
-      description: "Historical document from collection",
-      imagePath: "/ocr_data/page_026.jpg",
-      size: [1780, 2592],
-      lines: 18,
-      characters: 445,
-      type: "Image",
-      color: "purple"
-    },
-    {
-      title: "Page 027",
-      description: "Final page of manuscript collection",
-      imagePath: "/ocr_data/page_027.jpg",
-      size: [1780, 2592],
-      lines: 15,
-      characters: 355,
-      type: "Image",
-      color: "green"
     }
   ];
 
@@ -223,7 +163,7 @@ export const ProtectedApp = () => {
 
   // Load OCR data
   useEffect(() => {
-    fetch('/ocr_data/ocr_results_20250801_160306.json')
+    fetch('/ocr_data/converted_ocr_results.json')
       .then(response => response.json())
       .then(data => setOcrData(data))
       .catch(error => console.error('Error loading OCR data:', error));
