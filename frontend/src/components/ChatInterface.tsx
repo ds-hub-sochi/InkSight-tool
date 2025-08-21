@@ -260,7 +260,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </div>
           ) : (
             <>
-              {messages.map((message, index) => (
+              {messages.map((message) => (
                 <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`flex items-start space-x-3 max-w-[80%] ${message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
                     {/* Avatar */}
