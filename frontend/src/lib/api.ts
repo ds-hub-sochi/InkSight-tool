@@ -11,7 +11,7 @@ type AxiosResponse<T = any> = {
 };
 
 // const API_BASE_URL = import.meta.env.VITE_API_URL;
-const API_BASE_URL = 'http://backend:8000';
+const API_BASE_URL = ''; // Используем относительные пути
 
 const api = axios.create({
   baseURL: API_BASE_URL,
