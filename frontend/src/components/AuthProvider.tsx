@@ -2,7 +2,8 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import type { ReactNode } from 'react';
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+// const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = 'http://backend:8000';
 
 // Types
 export interface User {
