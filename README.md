@@ -2,7 +2,7 @@
 
 ## Architecture
 
-```
+```txt
 agentic_RAG/
 ├── backend/           # Python FastAPI backend
 │   ├── src/          # Python source code
@@ -42,11 +42,12 @@ The backend provides a comprehensive REST API:
 - `GET /api/v1/store-info` - Get vector store information
 - `GET /api/v1/health` - System health check
 
-Full API documentation available at: `http://localhost:8000/docs`
+Full API documentation available at: `http://localhost:8010/docs`
 
 ## Stack
 
 ### Backend
+
 - **FastAPI**
 - **LangChain**
 - **ChromaDB**
@@ -55,6 +56,7 @@ Full API documentation available at: `http://localhost:8000/docs`
 - **UV**
 
 ### Frontend
+
 - **React 18**
 - **TypeScript**
 - **Vite**
@@ -66,19 +68,22 @@ Full API documentation available at: `http://localhost:8000/docs`
 ## Development
 
 ### DB
+
 ```bash
 cd backend
 uv run python cli.py process ../data --clear  # Build vector database from data folder
 uv run python cli.py info       # Check vector store status
 ```
 
-### Backend
+### Backend run
+
 ```bash
 cd backend
 uv run python main.py --host 0.0.0.0 --port 8000
 ```
 
-### Frontend
+### Frontend run
+
 ```bash
 cd frontend
 npm run build
@@ -86,6 +91,7 @@ npm run dev
 ```
 
 ###
+
 test user credentials:
 testuser
 secret

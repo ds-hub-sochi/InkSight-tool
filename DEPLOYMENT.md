@@ -19,6 +19,7 @@ cp .env.example .env
 ```
 
 ### 2. Deploy
+
 ```bash
 chmod +x deploy.sh
 ./deploy.sh
@@ -26,11 +27,12 @@ chmod +x deploy.sh
 
 ### 3. Access Application
 
-- **Frontend**: http://localhost
-- **Backend API**: http://localhost:8000
-- **API Documentation**: http://localhost:8000/docs
+- **Frontend**: <http://localhost:8020>
+- **Backend API**: <http://localhost:8010>
+- **API Documentation**: <http://localhost:8010/docs>
 
 **Default Login:**
+
 - Username: `testuser`
 - Password: `secret`
 
@@ -67,7 +69,7 @@ docker-compose logs -f [service_name]
 
 ## Directory Structure
 
-```
+```txt
 agentic_RAG/
 ├── backend/
 │   ├── Dockerfile
