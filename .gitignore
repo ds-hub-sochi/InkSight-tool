@@ -9,3 +9,12 @@ wheels/
 # Virtual environments
 .venv
 backend/.env
+
+# Environment files
+.env
+frontend/.env
+*.env.local
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
