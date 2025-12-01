@@ -6,12 +6,10 @@ from langchain_core.tools import tool
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 
-from ..models.llm import ChatOpenRouter
+from ..models.llm import ChatOpenRouter, ChatLocalModel
 from ..core.tracing import setup_tracing
 from .retrieval import RetrievalService
 from .prompts import MANUSCRIPT_ANALYSIS_SYSTEM_PROMPT
-
-
 
 class AgenticChatBot:
     """Agentic chatbot with vector retrieval capabilities."""
@@ -24,14 +22,21 @@ class AgenticChatBot:
         temperature: float = 0.1,
         max_tokens: int = 1500,
         langsmith_project: Optional[str] = None,
+        use_local_model: bool = eval(os.getenv("USE_LOCAL_MODEL")),
     ):
         """Initialize the agentic chatbot."""
-        # Setup components
-        self.llm = ChatOpenRouter(
-            model_name=model_name,
-            temperature=temperature,
-            max_tokens=max_tokens
-        )
+        # Инициализация LLM в зависимости от флага
+        if use_local_model:
+            self.llm = ChatLocalModel.from_settings(
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
+        else:
+            self.llm = ChatOpenRouter(
+                model_name=model_name,
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
 
         self.retrieval_service = RetrievalService(
             vector_store_path=vector_store_path,

@@ -5,6 +5,10 @@ services:
       dockerfile: Dockerfile
     container_name: inksight-backend
     environment:
+      - USE_LOCAL_MODEL=${USE_LOCAL_MODEL}
+      - AGENT_LLM_MODEL=${AGENT_LLM_MODEL}
+      - AGENT_API_KEY=${AGENT_API_KEY}
+      - AGENT_BASE_URL=${AGENT_BASE_URL}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY:-}
       - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-inksight}
@@ -29,10 +33,10 @@ services:
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
-      interval: 10s
-      timeout: 10s
+      interval: 5s
+      timeout: 5s
       retries: 3
-      start_period: 20s
+      start_period: 5s
 
   frontend:
     build:

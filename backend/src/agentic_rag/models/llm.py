@@ -3,7 +3,8 @@ from typing import Optional
 from dotenv import load_dotenv
 from langchain_core.utils.utils import secret_from_env
 from langchain_openai import ChatOpenAI
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, model_validator
+from pydantic_settings import BaseSettings
 
 load_dotenv()
 
@@ -45,3 +46,39 @@ class ChatOpenRouter(ChatOpenAI):
             max_retries=max_retries,
             **kwargs,
         )
+
+
+class LLMSettings(BaseSettings):
+    agent_llm_model: str = Field(..., env="AGENT_LLM_MODEL")
+    agent_api_key: str = Field(..., env="AGENT_API_KEY")
+    agent_base_url: str = Field(..., env="AGENT_BASE_URL")
+
+
+class ChatLocalModel(ChatOpenAI):
+    """Custom ChatOpenAI class for local model integration."""
+    @classmethod
+    def from_settings(cls, **kwargs):
+        settings = LLMSettings()
+        return cls(
+            model=settings.agent_llm_model,
+            api_key=settings.agent_api_key,
+            base_url=settings.agent_base_url,
+            max_retries=32,
+            timeout=3600,
+            **kwargs
+        )
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_settings(cls, data):
+        # Fallback для прямой инициализации без settings
+        if isinstance(data, dict) and 'model' not in data:
+            settings = LLMSettings()
+            data = {
+                **data,
+                'model': settings.agent_llm_model,
+                'api_key': settings.agent_api_key,
+                'base_url': settings.agent_base_url
+            }
+        return data
+
