@@ -1,12 +1,9 @@
 services:
-  # Backend service
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: inksight-backend
-    ports:
-      - "8010:8000"
     environment:
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY:-}
@@ -18,39 +15,59 @@ services:
       - ./backend/users.json:/app/users.json
     networks:
       - inksight-network
+      - traefik-proxy-net
     restart: unless-stopped
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`inksight.ru`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls=true"
+      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.api.priority=100"
+      - "traefik.http.services.api.loadbalancer.server.port=8000"
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
-      interval: 30s
+      interval: 10s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 20s
 
-  # Frontend service
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: inksight-frontend
-    ports:
-      - "8020:80"
+    networks:
+      - inksight-network
+      - traefik-proxy-net
+    restart: unless-stopped
+    environment:
+      - VITE_API_URL=https://inksight.ru/api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`inksight.ru`) && !PathPrefix(`/api`)"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      - "traefik.http.routers.web.tls=true"
+      - "traefik.http.routers.web.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web.priority=1"
+      - "traefik.http.services.web.loadbalancer.server.port=3000"
+
     depends_on:
       backend:
         condition: service_healthy
-    networks:
-      - inksight-network
-    restart: unless-stopped
+
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
-      interval: 30s
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 20s
       timeout: 10s
       retries: 3
       start_period: 10s
 
+
 networks:
   inksight-network:
-    driver: bridge
-
-volumes:
-  uploads:
-    driver: local
+    name: inksight-network
+  traefik-proxy-net:
+    external: true

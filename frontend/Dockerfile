@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm i
+RUN npm install
 
 # Copy source code
 COPY . .
@@ -16,21 +16,23 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Production stage
-FROM nginx:alpine
+# Production stage — serve static files
+FROM node:20-alpine
 
-# Copy built application from builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
+WORKDIR /app
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Install a lightweight static server
+RUN npm install -g serve
 
-# Expose port
-EXPOSE 80
+# Copy build output
+COPY --from=builder /app/dist ./dist
 
-# Health check
+# Expose port (Traefik будет сюда проксировать)
+EXPOSE 3000
+
+# Healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Run the static server
+CMD ["serve", "-s", "dist", "-l", "3000"]
