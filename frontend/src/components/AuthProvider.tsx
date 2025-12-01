@@ -5,6 +5,13 @@ import axios from 'axios';
 // const API_BASE_URL = import.meta.env.VITE_API_URL;
 const API_BASE_URL = ''; // Используем относительные пути
 
+// === ДЕМО РЕЖИМ ===
+const DEMO_MODE = import.meta.env.VITE_DEMO_MODE;
+const DEMO_CREDENTIALS = {
+  username: 'demo',
+  password: 'secret'
+};
+
 // Types
 export interface User {
   id: number;
@@ -41,7 +48,6 @@ export const authAPI = {
   },
 
   logout: async (): Promise<void> => {
-    // Just a placeholder - actual logout is handled client-side
     await axios.post(`${API_BASE_URL}/api/v1/auth/logout`);
   },
 };
@@ -81,26 +87,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored token on app load
-    const storedToken = tokenStorage.get();
-    if (storedToken) {
-      setToken(storedToken);
-      // Verify token and get user info
-      authAPI.getCurrentUser(storedToken)
-        .then((userData) => {
+    const initAuth = async () => {
+      const storedToken = tokenStorage.get();
+      
+      if (storedToken) {
+        // Проверяем существующий токен
+        try {
+          const userData = await authAPI.getCurrentUser(storedToken);
+          setToken(storedToken);
           setUser(userData);
-        })
-        .catch(() => {
-          // Token is invalid, remove it
+        } catch {
           tokenStorage.remove();
-          setToken(null);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
+        }
+      } else if (DEMO_MODE) {
+        // ДЕМО: авто-логин
+        try {
+          console.log('🚀 DEMO MODE: Авто-логин...');
+          const tokenResponse = await authAPI.login(DEMO_CREDENTIALS);
+          const newToken = tokenResponse.access_token;
+          
+          tokenStorage.set(newToken);
+          setToken(newToken);
+          
+          const userData = await authAPI.getCurrentUser(newToken);
+          setUser(userData);
+          console.log('✅ DEMO MODE: Авторизация успешна для', userData.username);
+        } catch (error) {
+          console.error('❌ DEMO MODE: Ошибка авто-логина:', error);
+        }
+      }
+      
       setLoading(false);
-    }
+    };
+
+    initAuth();
   }, []);
 
   const login = async (credentials: LoginRequest) => {
@@ -108,15 +128,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const tokenResponse = await authAPI.login(credentials);
       const newToken = tokenResponse.access_token;
       
-      // Store token
       tokenStorage.set(newToken);
       setToken(newToken);
       
-      // Get user info
       const userData = await authAPI.getCurrentUser(newToken);
       setUser(userData);
     } catch (error) {
-      // Re-throw error so components can handle it
       throw error;
     }
   };
@@ -125,10 +142,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     tokenStorage.remove();
     setToken(null);
     setUser(null);
-    // Call logout API endpoint (optional)
-    authAPI.logout().catch(() => {
-      // Ignore errors on logout
-    });
+    authAPI.logout().catch(() => {});
   };
 
   const value: AuthContextType = {
@@ -144,7 +158,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-gray-600">
+            {DEMO_MODE ? '🚀 Загрузка демо-режима...' : 'Loading...'}
+          </p>
         </div>
       </div>
     );
@@ -153,7 +169,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Hook to use auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

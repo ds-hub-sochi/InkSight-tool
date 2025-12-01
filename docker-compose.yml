@@ -42,13 +42,15 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_DEMO_MODE=${VITE_DEMO_MODE}
     container_name: inksight-frontend
+    environment:
+      - VITE_API_URL=https://inksight.ru/api
     networks:
       - inksight-network
       - traefik-proxy-net
     restart: unless-stopped
-    environment:
-      - VITE_API_URL=https://inksight.ru/api
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.web.rule=Host(`inksight.ru`) && !PathPrefix(`/api`)"

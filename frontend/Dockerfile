@@ -13,6 +13,9 @@ RUN npm install
 # Copy source code
 COPY . .
 
+ARG VITE_DEMO_MODE=false
+ENV VITE_DEMO_MODE=$VITE_DEMO_MODE
+
 # Build the application
 RUN npm run build
 
