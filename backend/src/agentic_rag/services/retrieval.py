@@ -85,7 +85,9 @@ class RetrievalService:
         else:
             # Return top k without reranking
             filtered_docs = filtered_docs[:k]
-
+        
+        # print(filtered_docs)
+        
         return filtered_docs
 
     def retrieve_with_scores(
