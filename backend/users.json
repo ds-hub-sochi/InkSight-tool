@@ -6,5 +6,13 @@
     "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
     "is_active": true,
     "created_at": "2025-01-18T00:00:00"
+  },
+  "demo": {
+    "id": 1,
+    "username": "demo",
+    "email": "test@example.com",
+    "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
+    "is_active": true,
+    "created_at": "2025-01-18T00:00:00"
   }
 }
