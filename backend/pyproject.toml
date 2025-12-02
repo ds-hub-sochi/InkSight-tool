@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
-    { name = "AleksandrTulenkov", email = "aatulenkov@gmail.com" }
+    { name = "Ivan Ulitin", email = "ulitin.ivan3004@mail.ru" }
 ]
 requires-python = ">=3.12"
 dependencies = [
@@ -26,5 +26,6 @@ dependencies = [
     "passlib[bcrypt]>=1.7.4",
     "python-dateutil>=2.8.2",
     "langgraph>=0.6.5",
+    "pypdf>=6.4.0",
 ]
 

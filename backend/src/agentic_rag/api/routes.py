@@ -1,6 +1,7 @@
 import os
 from fastapi import APIRouter, HTTPException, BackgroundTasks, UploadFile, File, Depends
 from fastapi.responses import JSONResponse
+import logging
 
 from .models import (
     ChatMessage,
@@ -17,6 +18,8 @@ from ..services.data_pipeline import DataPreparationPipeline
 from ..services.file_processor import FileProcessor
 from ..services.text_splitter import TextChunker
 from ..core.auth import get_current_active_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -107,23 +110,47 @@ async def clear_memory(current_user: dict = Depends(get_current_active_user)):
 
 
 @router.post("/upload", response_model=UploadDocumentResponse)
-async def upload_document(file: UploadFile = File(...), current_user: dict = Depends(get_current_active_user)):
+async def upload_document(
+    file: UploadFile = File(...), 
+    current_user: dict = Depends(get_current_active_user)
+):
+    logger.info(f"Upload attempt: {file.filename}, size: {file.size}")
+    
     if not data_pipeline or not file_processor:
+        logger.error("Services not initialized")
         raise HTTPException(status_code=500, detail="Service unavailable")
+    
     if not FileProcessor.is_supported_file(file.filename):
         supported = FileProcessor.get_supported_extensions()
-        raise HTTPException(status_code=400, detail=f"Unsupported file type. Supported types: {', '.join(supported)}")
+        logger.warning(f"Unsupported file: {file.filename}, supported: {supported}")
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Unsupported file type. Supported types: {', '.join(supported)}"
+        )
+    
     try:
+        # Читаем файл
         file_bytes = await file.read()
+        logger.info(f"File read: {len(file_bytes)} bytes")
+        
+        # Обрабатываем файл
         documents, file_info = file_processor.process_uploaded_file(
             file_bytes=file_bytes,
             filename=file.filename,
             metadata={"upload_source": "api"},
         )
+        logger.info(f"Processed: {len(documents)} documents")
+        
+        # Чанкируем
         text_chunker = TextChunker()
         chunks = text_chunker.chunk_documents(documents)
+        logger.info(f"Chunked: {len(chunks)} chunks")
+        
+        # Добавляем в векторное хранилище
         data_pipeline.vector_store.initialize_store()
         data_pipeline.vector_store.add_documents(chunks)
+        logger.info(f"Stored: {len(chunks)} chunks")
+        
         return UploadDocumentResponse(
             success=True,
             message=f"Successfully processed and uploaded {file.filename}",
@@ -131,15 +158,15 @@ async def upload_document(file: UploadFile = File(...), current_user: dict = Dep
             chunks_processed=len(chunks),
             file_size_bytes=file_info["size_bytes"],
         )
+        
     except ValueError as e:
+        logger.error(f"ValueError in upload: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception:
-        return UploadDocumentResponse(
-            success=False,
-            message="Error processing file. Please try again.",
-            filename=file.filename or "unknown",
-            chunks_processed=0,
-            file_size_bytes=0,
+    except Exception as e:
+        logger.exception(f"Unexpected error processing {file.filename}: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error processing file: {str(e)}"
         )
 
 
