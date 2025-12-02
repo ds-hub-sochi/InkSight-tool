@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     agent_api_key: str = Field(..., env="AGENT_API_KEY")
     agent_base_url: str = Field(..., env="AGENT_BASE_URL")
     # model_name: str = Field(default="anthropic/claude-3-5-sonnet")
-    model_name: str = Field(default="meta-llama/llama-3.3-70b-instruct:free")
+    model_name: str = Field(default="qwen/qwen3-235b-a22b:free")
     temperature: float = Field(default=0.1, ge=0.0, le=2.0)
     max_tokens: int = Field(default=2000, gt=0)
 
