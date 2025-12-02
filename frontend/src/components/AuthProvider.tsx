@@ -88,36 +88,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      const storedToken = tokenStorage.get();
-      
+      let storedToken = tokenStorage.get();
+
       if (storedToken) {
-        // Проверяем существующий токен
         try {
           const userData = await authAPI.getCurrentUser(storedToken);
           setToken(storedToken);
           setUser(userData);
+          setLoading(false);
+          return;
         } catch {
           tokenStorage.remove();
-        }
-      } else if (DEMO_MODE) {
-        // ДЕМО: авто-логин
-        try {
-          console.log('🚀 DEMO MODE: Авто-логин...');
-          const tokenResponse = await authAPI.login(DEMO_CREDENTIALS);
-          const newToken = tokenResponse.access_token;
-          
-          tokenStorage.set(newToken);
-          setToken(newToken);
-          
-          const userData = await authAPI.getCurrentUser(newToken);
-          setUser(userData);
-          console.log('✅ DEMO MODE: Авторизация успешна для', userData.username);
-        } catch (error) {
-          console.error('❌ DEMO MODE: Ошибка авто-логина:', error);
+          storedToken = null;
         }
       }
-      
-      setLoading(false);
+
+      if (DEMO_MODE) {
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            console.log(`🚀 DEMO MODE: Авто-логин, попытка ${attempt + 1}...`);
+            const tokenResponse = await authAPI.login(DEMO_CREDENTIALS);
+            const newToken = tokenResponse.access_token;
+
+            tokenStorage.set(newToken);
+            setToken(newToken);
+
+            const userData = await authAPI.getCurrentUser(newToken);
+            setUser(userData);
+
+            console.log('✅ DEMO MODE: Авторизация успешна для', userData.username);
+            setLoading(false);
+            return;
+          } catch (error) {
+            console.error(`❌ DEMO MODE: Ошибка авто-логина попытка ${attempt + 1}:`, error);
+            // Если вторая попытка — выходим с ошибкой, показываем логику без авторизации
+            if (attempt === 1) {
+              setLoading(false);
+            }
+          }
+        }
+      } else {
+        setLoading(false);
+      }
     };
 
     initAuth();
