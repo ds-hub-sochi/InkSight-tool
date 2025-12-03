@@ -444,12 +444,11 @@ MIT License
 
 ## 👥 Authors
 
-- **Ivan Ulitin** — [@IvanUlitin](https://github.com/IvanUlitin)
-- **AleksandrTulenkov** — [@AleksandrTulenkov](https://github.com/AleksandrTulenkov)
-- **QQQiwi** — [@QQQiwi](https://github.com/QQQiwi)
-- **Rastorguev763** — [@Rastorguev763](https://github.com/Rastorguev763)
-- **maximazzik** — [@maximazzik](https://github.com/maximazzik)
-- **soltkreig** — [@soltkreig](https://github.com/soltkreig)
+- **Aleksandr Tulenkov** — [@AleksandrTulenkov](https://github.com/AleksandrTulenkov)
+- **Ivan Ulitin** — [@QQQiwi](https://github.com/QQQiwi)
+- **Alexey Rastorguev** — [@Rastorguev763](https://github.com/Rastorguev763)
+- **Maxim Novopoltsev** — [@maximazzik](https://github.com/maximazzik)
+- **Ruslan Murtazin** — [@soltkreig](https://github.com/soltkreig)
 
 ---
 
