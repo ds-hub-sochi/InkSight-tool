@@ -444,7 +444,12 @@ MIT License
 
 ## 👥 Authors
 
-- **Ivan Ulitin** — [ulitin.ivan3004@mail.ru](mailto:ulitin.ivan3004@mail.ru)
+- **Ivan Ulitin** — [@IvanUlitin](https://github.com/IvanUlitin)
+- **AleksandrTulenkov** — [@AleksandrTulenkov](https://github.com/AleksandrTulenkov)
+- **QQQiwi** — [@QQQiwi](https://github.com/QQQiwi)
+- **Rastorguev763** — [@Rastorguev763](https://github.com/Rastorguev763)
+- **maximazzik** — [@maximazzik](https://github.com/maximazzik)
+- **soltkreig** — [@soltkreig](https://github.com/soltkreig)
 
 ---
 
